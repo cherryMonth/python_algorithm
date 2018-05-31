@@ -8,6 +8,7 @@ temper = temper.reshape(temp_layer, temp_width, temp_breadth)
 
 temper[0][0][0] = np.nan
 
+
 def replace_miss(matrix):
 
     temp_matrix = np.zeros((temp_layer + 2, temp_width + 2, temp_breadth + 2))

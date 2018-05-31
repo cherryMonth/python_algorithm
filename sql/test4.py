@@ -11,14 +11,14 @@ engine = create_engine("mysql://root:123456@192.168.1.15:3306/grm_production2?ch
 
 store_id = 1
 
-start_time = '2017-01-06 01:00:05'
+start_time = '2017-03-01 00:00:00'
 
-end_time = '2017-02-06 21:00:05'
+end_time = '2017-04-01 00:00:00'
 
 data = pd.read_sql(
     "select store_temp_layer, store_temp_breadth, store_temp_width, store_length, store_breadth ,entry_time , entry_data "
     "from grm_production2.entry_temperature, grm_production2.store where entry_temperature.store_id = store.store_id "
-    "and entry_temperature.store_id = '{}' and entry_temperature.entry_time >= '{}' and entry_temperature.entry_time <= '{}';".format(store_id, start_time, end_time), con=engine)
+    "and entry_temperature.store_id = '{}' and entry_temperature.entry_time >= '{}' and entry_temperature.entry_time <= '{}' and entry_temperature.entry_time like '2017-%-% 09:00:05' ;".format(store_id, start_time, end_time), con=engine)
 
 line_num = len(data)
 

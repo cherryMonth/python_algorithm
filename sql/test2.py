@@ -37,7 +37,7 @@ z = list()
 for i in range(temp_layer):
     temp = temp_list[:, :, temp_layer - i - 1].transpose()  # 记录每层的温度
     temper.append(temp)
-    temp_z = np.full((temp_width, temp_breadth), (temp_layer - i - 1) * 1.5)  # 记录高度
+    temp_z = np.full((temp_width, temp_breadth), (temp_layer - i) * 1.5)  # 记录高度
     z.append(temp_z)
 
 miss_num = len(temper[temper == None])  # 缺失的数量
@@ -46,7 +46,6 @@ miss_percent = 1.0 * miss_num / (temp_layer * temp_width * temp_breadth) * 100  
 
 
 def replace_miss(matrix):
-
     """
     由于缺失值要取平均 因为在最外面的元素只能从内部或相邻的元素求平均,此时有5个(面上),3个(顶角),4个(棱上) 三种情况，需要分别考虑很麻烦；
     所以我构造了一个最外层全为0的矩阵 这样就不需要考虑该元素是不是最外层 只需要判断该元素是否缺失 然后从周围六个元素取平均即可
@@ -63,7 +62,6 @@ def replace_miss(matrix):
         for _j in range(temp_width):
             for _k in range(temp_breadth):
                 if matrix[_i][_j][_k] is None:
-
                     """
                     如果结果为缺失 则用上下左右的值取平均替换 
                     matrix矩阵各元素与 temp_matrix 矩阵的下标各少1
@@ -80,30 +78,52 @@ if miss_percent > 0.06:  # 若大于 6% 则用周围平均值代替
     replace_miss(temper)
 
 data = list()
-
-for temp in z:
+for temp in range(len(z)):
+    line = temper[temp].reshape(1, temp_breadth * temp_width)[0]
+    max_temp = max(line)
+    min_temp = min(line)
+    max_index = np.where(line == max_temp)[0][0]
+    min_index = np.where(line == min_temp)[0][0]
     temp_trace = Scatter3d(
-        x=x.reshape(1, temp_breadth * temp_width)[0],
-        y=y.reshape(1, temp_breadth * temp_width)[0],
-        z=temp.reshape(1, temp_breadth * temp_width)[0],
+        x=[x.reshape(1, temp_breadth * temp_width)[0][max_index]],
+        y=[y.reshape(1, temp_breadth * temp_width)[0][max_index]],
+        z=[z[temp].reshape(1, temp_breadth * temp_width)[0][max_index]],
         mode='markers',
         showlegend=False,
+        name="最高温度 " + str(line[max_index]) + "℃",
         marker=dict(
+            color='rgb(255, 87, 51)',
             size=12,
             line=dict(
-                color='rgba(217, 217, 217, 0.14)',
-                width=0.5
+                width=0.5,
             ),
-            opacity=0.8
+        )
+    )
+
+    min_temp_trace = Scatter3d(
+        x=[x.reshape(1, temp_breadth * temp_width)[0][min_index]],
+        y=[y.reshape(1, temp_breadth * temp_width)[0][min_index]],
+        z=[z[temp].reshape(1, temp_breadth * temp_width)[0][min_index]],
+        mode='markers',
+        name="最低温度 " + str(line[min_index]) + "℃",
+        showlegend=False,
+        marker=dict(
+            color='rgb(0, 0, 0)',
+            size=12,
+            line=dict(
+                width=0.5,
+            ),
         )
     )
     data.append(temp_trace)
+    data.append(min_temp_trace)
 
 for temp in range(len(z)):
     temp_trace = {
         "x": x,
         "y": y,
         "z": z[temp],
+        'name': '第%d层温度变化' % (temp + 1, ),
         "surfacecolor": temper[temp],
         "colorbar": {"title": "温度与位置关系"},
         "colorscale": "Hot",
@@ -112,15 +132,21 @@ for temp in range(len(z)):
     }
     data.append(temp_trace)
 
-
 layout = Layout(
     margin=dict(
         l=0,
         r=0,
         b=0,
         t=0
+    ),
+    scene=Scene(
+        xaxis=XAxis(title='长度'),
+        yaxis=YAxis(title='宽度'),
+        zaxis=ZAxis(title='高度'),
     )
 )
 
 fig = Figure(data=data, layout=layout)
+# plotly.offline.init_notebook_mode(connected=True)
+# py.iplot(fig)
 plotly.offline.plot(fig)
