@@ -6,19 +6,19 @@ from plotly.graph_objs import *
 import json
 import plotly
 
-
 engine = create_engine("mysql://root:123456@192.168.1.15:3306/grm_production2?charset=utf8")
 
 store_id = 1
 
-start_time = '2017-03-01 00:00:00'
+start_time = '2017-01-01 00:00:00'
 
-end_time = '2017-04-01 00:00:00'
+end_time = '2018-01-01 00:00:00'
 
 data = pd.read_sql(
     "select store_temp_layer, store_temp_breadth, store_temp_width, store_length, store_breadth ,entry_time , entry_data "
     "from grm_production2.entry_temperature, grm_production2.store where entry_temperature.store_id = store.store_id "
-    "and entry_temperature.store_id = '{}' and entry_temperature.entry_time >= '{}' and entry_temperature.entry_time <= '{}' and entry_temperature.entry_time like '2017-%-% 09:00:05' ;".format(store_id, start_time, end_time), con=engine)
+    "and entry_temperature.store_id = '{}' and entry_temperature.entry_time >= '{}' and entry_temperature.entry_time <= '{}' and entry_temperature.entry_time like '2017-%-% 09:00:__' ;".format(
+        store_id, start_time, end_time), con=engine)
 
 line_num = len(data)
 
@@ -34,45 +34,58 @@ for num in range(line_num):
     time = data.loc[num, 'entry_time']
     json_data = data.loc[num, 'entry_data']
     data_dict = json.loads(json_data, "utf-8")
-    max_data = max(data_dict['data'])
-    min_data = min(data_dict['data'])
+    _data = data_dict['data']
+    max_data = max(_data)
+    min_data = min(_data)
     houseTemp = data_dict['houseTemp']
     houseMois = data_dict['houseMois']
     outTemp = data_dict['outTemp']
     outMois = data_dict['outMois']
-    x.append(time)
+
     house_temp_list.append(houseTemp)
+
     house_Mois_list.append(houseMois)
+
     out_Mois_list.append(outMois)
+
     out_temp_list.append(outTemp)
+
     max_data_list.append(max_data)
+
     min_data_list.append(min_data)
+
+    x.append(time)
+
 
 trace0 = Scatter(  # 室温
     x=x,
     y=house_temp_list,
-    name="室内温度"
+    name="室内温度",
+    mode="lines"
 )
 
 trace1 = Scatter(  # 室外温度
     x=x,
     y=out_temp_list,
-    name="室外温度"
+    name="室外温度",
+    mode="lines"
 )
 
 trace2 = Scatter(  # 室外温度
     x=x,
     y=max_data_list,
-    name="仓库最高温度"
+    name="仓库最高温度",
+    mode="lines"
 )
 
 trace3 = Scatter(  # 室外温度
     x=x,
     y=min_data_list,
-    name="仓库最低温度"
+    name="仓库最低温度",
+    mode="lines"
 )
 
-x_axis_template=dict(
+x_axis_template = dict(
     showgrid=True,  # 网格
     zeroline=True,  # 是否显示基线,即沿着(0,0)画出x轴和y轴
     nticks=20,
@@ -81,7 +94,7 @@ x_axis_template=dict(
     mirror='all'
 )
 
-y_axis_template=dict(
+y_axis_template = dict(
     showgrid=True,  # 网格
     zeroline=True,  # 是否显示基线,即沿着(0,0)画出x轴和y轴
     nticks=20,
@@ -99,4 +112,3 @@ data = Data([trace0, trace1, trace2, trace3])
 
 fig = Figure(data=data, layout=layout)
 plotly.offline.plot(fig)
-
